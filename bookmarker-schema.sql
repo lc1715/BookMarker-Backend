@@ -22,10 +22,20 @@ CREATE TABLE saved_books (
 
 CREATE TABLE reviews (
     id SERIAL PRIMARY KEY,
-    saved_books_id INTEGER NOT NULL REFERENCES saved_books ON DELETE CASCADE,
+    saved_book_id INTEGER NOT NULL REFERENCES saved_books ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
     comment TEXT NOT NULL,
     volume_id INTEGER UNIQUE NOT NULL,
     created_at DATE DEFAULT CURRENT_DATE
 );
+
+CREATE TABLE ratings (
+    id SERIAL PRIMARY KEY,
+    saved_book_id INTEGER NOT NULL REFERENCES saved_books ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
+    rating INTEGER NOT NULL,
+    volume_id INTEGER UNIQUE NOT NULL
+)
+
+
 
