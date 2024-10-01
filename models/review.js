@@ -1,17 +1,17 @@
 "use strict";
 
-const db = require(`./db.js`)
+const db = require('../db.js');
 
 const {
     NotFoundError,
     ForbiddenError,
     BadRequestError,
-} = require('./expressError');
+} = require('../expressError');
 
 
 class Review {
 
-    /** Add a review given username, savedBookId, and data 
+    /** Add a book review given username, savedBookId, and data 
     * 
     * data: {comment, volume_id } 
     *
@@ -20,20 +20,21 @@ class Review {
     * id: book review's id
     **/
 
-    static async addReview(username, savedBookId, data) {
+    static async addReview(savedBookId, username, data) {
+        //check if user exists
         const preCheckUser = await db.query(
             `SELECT id, username
               FROM users
-              WHERE id = $1`, [username]
+              WHERE username = $1`, [username]
         );
 
         const user = preCheckUser.rows[0];
 
         if (!user) throw new NotFoundError(`No User: ${username} Not Found`)
 
-        //check book
+        //check if saved book id and volume id are both in saved_books table
         const preCheckBook = await db.query(
-            `SELECT id
+            `SELECT id, volume_id
               FROM saved_books
               WHERE id = $1
               AND volume_id = $2 `, [savedBookId, data.volume_id]
@@ -41,10 +42,10 @@ class Review {
 
         const book = preCheckBook.rows[0]
 
-        if (!book) throw new NotFoundError(`No BookId: ${savedBookId} Not Found`)
+        if (!book) throw new NotFoundError(`Cannot find Book Id: ${savedBookId} or Volume Id: ${data.volume_id} in saved_books table`)
 
-        //Check if review already written
-        const preCheckReviewInDB = db.query(
+        //check if review already written
+        const preCheckReviewInDB = await db.query(
             `SELECT id
               FROM reviews
               WHERE user_id = $1
@@ -59,48 +60,59 @@ class Review {
         //Check if review is empty
         if (data.comment === '') throw new BadRequestError(`Empty review. Please write a review`);
 
-        const result = db.query(
+        const result = await db.query(
             `INSERT INTO reviews
-                    (comment,
+                    (saved_book_id,
+                     user_id,
+                     comment,
                      volume_id)
-                VALUES ($1, $2)
+                VALUES ($1, $2, $3, $4)
                 RETURNING id, comment, saved_book_id, user_id, volume_id, created_at`,
-            [data.comment, volumeId])
+            [savedBookId, user.id, data.comment, data.volume_id])
 
         const review = result.rows[0];
+
+        if (!review) throw new NotFoundError(`Review not added. Username: ${username}; Saved Book Id: ${savedBookId}; data: ${data}`)
 
         return review;
     }
 
-    /** Update a review given reviewId and data.
+    /** Update a book review given reviewId, username, and data.
      * 
      * data: { comment }
-     *
-     * id: book review's id
      * 
      * Returns: {id, comment, saved_book_id, user_id, volume_id, created_at}
      * 
+     * id: book review's id
      */
 
-    static async updateReview(reviewId, data) {
-        const preCheckReview = db.query(
-            `SELECT id
-                FROM reviews
-                WHERE id = $1`, [reviewId]
+    static async updateReview(reviewId, username, data) {
+        //check if user exists
+        const preCheckUser = await db.query(
+            `SELECT id, username
+              FROM users
+              WHERE username = $1`, [username]
         );
 
-        const review = preCheckReview.rows[0];
+        const user = preCheckUser.rows[0];
 
-        if (!review) throw new NotFoundError(`No Review Id. ReviewId: ${reviewId} not found`)
+        if (!user) throw new NotFoundError(`No User: ${username} Not Found`)
 
-        const result = db.query(
+        //Check if review is empty
+        if (data.comment === '') throw new BadRequestError(`Empty review. Please write a review`);
+
+        //update review
+        const result = await db.query(
             `UPDATE reviews
                 SET comment = $1
-                WHERE id = $2
+                WHERE user_id = $2
+                AND id = $3
                 RETURNING id, comment, created_at, user_id, saved_book_id, volume_id`,
-            [data.comment, reviewId])
+            [data.comment, user.id, reviewId])
 
         const updatedReview = result.rows[0];
+
+        if (!updatedReview) throw new NotFoundError(`No Review Found. ReviewId ${reviewId}`)
 
         return updatedReview;
     }
@@ -111,8 +123,8 @@ class Review {
      */
 
     static async getAllBookReviews(volumeId) {
-        const result = db.query(
-            `SELECT r.id, r.comment, r.created_at, r.volume_id, r.saved_book_id, r.user_id, u.username,
+        const result = await db.query(
+            `SELECT r.id, r.comment, r.created_at, r.volume_id, r.saved_book_id, r.user_id, u.username
                 FROM reviews AS r
                 JOIN users AS u
                 ON r.user_id = u.id
@@ -123,22 +135,32 @@ class Review {
 
         const reviews = result.rows;
 
-        if (!reviews) throw new NotFoundError(`No Volume Id: ${volumeId}. All reviews not found`)
-
         return reviews;
     }
 
-    /**Delete a review given reviewId
+    /**Delete a book review given reviewId and username
      * 
      * Returns: deleted review id
     */
 
-    static async deleteReview(reviewId) {
-        let reviewResp = db.query(
+    static async deleteReview(reviewId, username) {
+        //check if user exists
+        const preCheckUser = await db.query(
+            `SELECT id, username
+              FROM users
+              WHERE username = $1`, [username]
+        );
+
+        const user = preCheckUser.rows[0];
+
+        if (!user) throw new NotFoundError(`No User: ${username} Not Found`)
+
+        let reviewResp = await db.query(
             `DELETE 
-                    FROM reviews
-                    WHERE review_id = $1
-                    RETURNING review_id`, [reviewId]
+                FROM reviews
+                WHERE user_id = $1
+                AND id = $2
+                RETURNING id`, [user.id, reviewId]
         );
 
         const deletedReviewId = reviewResp.rows[0];

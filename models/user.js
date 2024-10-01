@@ -7,7 +7,7 @@ const {
     NotFoundError,
     BadRequestError,
     UnauthorizedError
-} = require('./expressError');
+} = require('../expressError');
 
 const { BCRYPT_WORK_FACTOR } = require('../config.js');
 
@@ -31,7 +31,7 @@ class User {
         );
 
         if (duplicateCheckUser.rows[0]) {
-            throw new BadRequestError(`Duplicate username: ${username}`)
+            throw new BadRequestError(`Please sign up with another username. ${username} has already been taken.`)
         }
 
         //If no duplicate user. Get hashed password and add to db.
@@ -66,6 +66,7 @@ class User {
     static async authenticate({ username, password }) {
         const result = await db.query(
             `SELECT id,
+                    password,
                     username,
                     email
                 FROM users
@@ -87,16 +88,16 @@ class User {
         throw new UnauthorizedError('Invalid username/password');
     }
 
-    /** Get a single user.
+    /** Get a single user 
      * 
-     * Given a username, return data about user.
+     * Given a username, return user's data.
      * 
-     * Returns { id, username, email, saved_books}
-     * where saved_books is { id... }
+     * Returns { id, username, email, saved_book_ids}
+     * where saved_book_ids is { id... }
    *
    * Throws NotFoundError if user not found.
    **/
-    static async get(username) {
+    static async getUser(username) {
         const userResp = await db.query(
             `SELECT id,
                     username,
@@ -116,12 +117,12 @@ class User {
                 WHERE user_id = $1`, [user.id]
         );
 
-        user.saved_books = userSaved_BooksResp.rows.map(bookObj => bookObj.id)
+        user.saved_book_ids = userSaved_BooksResp.rows.map(bookObj => bookObj.id)
 
         return user;
     }
 
-    /** Update a user's data with `data`.
+    /** Update a user's profile with data.
      * 
      * Data can include: { email }
      * 
@@ -132,7 +133,7 @@ class User {
 
     static async update(username, data) {
         const userResp = await db.query(
-            `SELECT id,
+            `SELECT id, username
                 FROM users
                 WHERE username = $1`,
             [username]
@@ -155,11 +156,14 @@ class User {
         return updatedUser;
     }
 
-    /** Delete a given user from database; returns deleted user's username . */
+    /** Delete a user from database given username
+     * 
+     * Returns deleted user's username
+     */
 
     static async delete(username) {
         const userResp = await db.query(
-            `SELECT id,
+            `SELECT id, username
                 FROM users
                 WHERE username = $1`,
             [username]
@@ -174,7 +178,7 @@ class User {
                 FROM users
                 WHERE id = $1
                 RETURNING username`,
-            [username],
+            [user.id],
         );
 
         const deletedUserUsername = result.rows[0];

@@ -1,0 +1,44 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "default": {},
+    "required": [
+        "username",
+        "password",
+        "email"
+    ],
+    "properties": {
+        "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 25,
+            "examples": [
+                "seal12"
+            ]
+        },
+        "password": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 25,
+            "examples": [
+                "ads5sd4dc"
+            ]
+        },
+        "email": {
+            "type": "string",
+            "minLength": 1,
+            "format": "email",
+            "examples": [
+                "seal@gmail.com"
+            ]
+        }
+    },
+    "examples": [
+        {
+            "username": "seal12",
+            "password": "ads5sd4dc",
+            "email": "seal@gmail.com"
+        }
+    ]
+}
