@@ -6,6 +6,8 @@ require('colors');
 
 
 const SECRET_KEY = process.env.SECRET_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const NYT_API_KEY = process.env.NYT_API_KEY;
 
 const PORT = +process.env.PORT || 3001;
 
@@ -28,6 +30,8 @@ console.log("---");
 
 module.exports = {
     SECRET_KEY,
+    GOOGLE_API_KEY,
+    NYT_API_KEY,
     PORT,
     BCRYPT_WORK_FACTOR,
     getDatabaseUri

@@ -3,9 +3,7 @@
 /** dependencies */
 const express = require('express');
 const cors = require('cors');
-//middleware that log information about requests
 const morgan = require('morgan');
-
 /** errors */
 const { NotFoundError } = require('./expressError')
 /** middleware */
@@ -23,11 +21,13 @@ const usersRoutes = require('./routes/users');
 const savedBooksRoutes = require('./routes/savedbooks');
 const reviewsRoutes = require('./routes/reviews')
 const ratingsRoutes = require('./routes/ratings')
+const booksRoutes = require('./routes/books')
 
 app.use('/users', usersRoutes);
 app.use('/savedbooks', savedBooksRoutes);
 app.use('/reviews', reviewsRoutes);
 app.use('/ratings', ratingsRoutes);
+app.use('/books', booksRoutes)
 
 
 /** Handle 404 errors */
