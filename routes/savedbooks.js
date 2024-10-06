@@ -3,9 +3,9 @@
 const express = require('express');
 const router = new express.Router();
 
-//model to communiccate with db
+//model to communicate with db
 const SavedBook = require('../models/savedbook');
-//Errors
+//error
 const { BadRequestError } = require('../expressError');
 //middleware 
 const { ensureCorrectUser } = require('../middleware/auth');
@@ -18,14 +18,14 @@ const { ensureCorrectUser } = require('../middleware/auth');
  * Given: username and data
  * data: {volume_id, title, author, publisher, category, description, image, has_read}
  * 
- * Returns {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}
+ * Returns: {savedBook: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}}
  * 
  * Authorization required: same user as :username
  */
 
 router.post('/:volumeId/user/:username', ensureCorrectUser, async function (req, res, next) {
     try {
-        //Check that volumId in params in equal to volumeId in req.body
+        //Check that volumId in params is equal to volumeId in req.body
         const volumeIdInParams = +req.params.volumeId;
 
         if (volumeIdInParams != req.body.volume_id) {
@@ -46,7 +46,7 @@ router.post('/:volumeId/user/:username', ensureCorrectUser, async function (req,
  * Given: id, username, and data
  * id: saved book id; data: {has_read} 
  * 
- * Returns: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}
+ * Returns: {updatedBook: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}}
  * 
  * Authorization required: same user as :username
  */
@@ -64,10 +64,10 @@ router.patch('/:id/user/:username', ensureCorrectUser, async function (req, res,
  * 
  * GET route: '/savedbooks/read/user/[username]'
  * 
- * Given: id, username, and data
- * id: saved book id; data: {has_read = true} 
+ * Given: username and data
+ * data: {has_read = true} 
  * 
- * Returns: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}
+ * Returns: {readBooks: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}}
  * 
  * Authorization required: same user as :username
  */
@@ -84,10 +84,10 @@ router.get('/read/user/:username', ensureCorrectUser, async function (req, res, 
  * 
  * GET route: '/savedbooks/wish/user/[username]'
  * 
- * Given: id, username, and data
- * id: saved book id; data: {has_read = false} 
+ * Given: username and data
+ * data: {has_read = false} 
  * 
- * Returns: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}
+ * Returns: {wishBooks: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}}
  * 
  * Authorization required: same user as :username
  */
@@ -107,7 +107,9 @@ router.get('/wish/user/:username', ensureCorrectUser, async function (req, res, 
  * Given: id, username
  * id: saved book id
  * 
- * Returns: {id, user_id, volume_id, title, author, publisher, category, description, image, has_read}
+ * Returns: {savedBook: {id, user_id, volume_id, title, author, publisher, category, description image, has_read, 
+ *           review: {id, saved_book_id, user_id, comment, created_at, volume_id} or 'None',
+ *           rating: {id, saved_book_id, user_id, rating, volume_id} or 'None'} }
  * 
  * Authorization required: same user as :username
  */
@@ -128,7 +130,7 @@ router.get('/:id/user/:username', ensureCorrectUser, async function (req, res, n
  * Given: id, username
  * id: saved book id
  * 
- * Returns: {id, username}
+ * Returns: {deletedBook: {id}}
  * 
  * Authorization required: same user as :username
  */
