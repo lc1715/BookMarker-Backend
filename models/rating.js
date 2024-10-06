@@ -4,12 +4,13 @@ const db = require('../db.js');
 
 const {
     NotFoundError,
+    BadRequestError,
 } = require('../expressError');
 
 
 class Rating {
 
-    /**Add a book rating given username, savedBookId, data
+    /**Add a book rating given savedBookId, username, data
      * 
      * data: rating, volume_id
      * 
@@ -19,6 +20,7 @@ class Rating {
      */
 
     static async addRating(savedBookId, username, data) {
+        //check if user exists
         const preCheckUser = await db.query(
             `SELECT id, username
               FROM users
@@ -31,40 +33,41 @@ class Rating {
 
         //check if saved book id and volume id are both in saved_books table
         const preCheckBook = await db.query(
-            `SELECT id
+            `SELECT id, volume_id
               FROM saved_books
               WHERE id = $1
-              AND volume_id = $2 `, [savedBookId, data.volume_id]
+              AND volume_id = $2`, [savedBookId, data.volume_id]
         );
 
         const book = preCheckBook.rows[0]
 
         if (!book) throw new NotFoundError(`Cannot find Book Id: ${savedBookId} or Volume Id: ${data.volume_id} in saved_books table`)
 
-        const result = await db.query(
-            `INSERT INTO ratings
+        try {
+            const result = await db.query(
+                `INSERT INTO ratings
                         (saved_book_id,
                          user_id,
                          rating,
                          volume_id)
                     VALUES ($1, $2, $3, $4)
                     RETURNING id, rating, saved_book_id, user_id, volume_id`,
-            [savedBookId, user.id, data.rating, data.volume_id]
-        )
+                [savedBookId, user.id, data.rating, data.volume_id]
+            )
 
-        const rating = result.rows[0];
+            const rating = result.rows[0];
 
-
-        if (!rating) throw new NotFoundError(`Rating not added. Username: ${username}; Saved Book Id: ${savedBookId}; data: ${data}`)
-
-        return rating;
+            return rating;
+        } catch (err) {
+            throw new BadRequestError(`Could not add rating to db. Db error: ${err}`)
+        }
     }
 
-    /** Update a book rating given username, ratingId and data.
+    /** Update a book rating given ratingId, username, and data.
      * 
      * data: { rating }
      * 
-     * Returns: {id, comment, saved_book_id, user_id, volume_id, created_at}
+     * Returns: {id, comment, saved_book_id, user_id, volume_id}
      * 
      * id: rating id 
      */

@@ -11,7 +11,7 @@ const {
 
 class Review {
 
-    /** Add a book review given username, savedBookId, and data 
+    /** Add a book review given savedBookId, username, and data 
     * 
     * data: {comment, volume_id } 
     *
@@ -37,7 +37,7 @@ class Review {
             `SELECT id, volume_id
               FROM saved_books
               WHERE id = $1
-              AND volume_id = $2 `, [savedBookId, data.volume_id]
+              AND volume_id = $2`, [savedBookId, data.volume_id]
         );
 
         const book = preCheckBook.rows[0]
@@ -46,35 +46,37 @@ class Review {
 
         //check if review already written
         const preCheckReviewInDB = await db.query(
-            `SELECT id
-              FROM reviews
-              WHERE user_id = $1
-              AND saved_book_id = $2`,
+            `SELECT id, comment
+                FROM reviews
+                WHERE user_id = $1
+                AND saved_book_id = $2`,
             [user.id, savedBookId]
         )
 
-        const reviewInDb = preCheckReviewInDB.rows[0]
+        const reviewInDb = preCheckReviewInDB.rows
 
-        if (reviewInDb) throw new ForbiddenError(`Only one review per book is allowed`)
+        if (reviewInDb.length > 0) throw new ForbiddenError(`Only one review per book is allowed`)
 
         //Check if review is empty
         if (data.comment === '') throw new BadRequestError(`Empty review. Please write a review`);
 
-        const result = await db.query(
-            `INSERT INTO reviews
+        try {
+            const result = await db.query(
+                `INSERT INTO reviews
                     (saved_book_id,
                      user_id,
                      comment,
                      volume_id)
                 VALUES ($1, $2, $3, $4)
                 RETURNING id, comment, saved_book_id, user_id, volume_id, created_at`,
-            [savedBookId, user.id, data.comment, data.volume_id])
+                [savedBookId, user.id, data.comment, data.volume_id])
 
-        const review = result.rows[0];
+            const review = result.rows[0];
 
-        if (!review) throw new NotFoundError(`Review not added. Username: ${username}; Saved Book Id: ${savedBookId}; data: ${data}`)
-
-        return review;
+            return review;
+        } catch (err) {
+            throw new BadRequestError(`Review not saved to db. Db error: ${err}`)
+        }
     }
 
     /** Update a book review given reviewId, username, and data.
@@ -119,7 +121,9 @@ class Review {
 
     /**Get all reviews for a book given volumeId 
      * 
-     * Returns: [{id, comment, created_at, volume_id, saved_book_id, user_id}, ...]
+     * Returns: [{id, comment, created_at, volume_id, saved_book_id, user_id, username}, ...]
+     * 
+     * id: review id
      */
 
     static async getAllBookReviews(volumeId) {
