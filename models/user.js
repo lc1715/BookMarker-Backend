@@ -37,23 +37,27 @@ class User {
         //If no duplicate user. Get hashed password and add to db.
         const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR)
 
-        const result = await db.query(
-            `INSERT INTO users
+        try {
+            const result = await db.query(
+                `INSERT INTO users
                     (username,
                      password,
                      email)
                 VALUES ($1, $2, $3)
                 RETURNING id, username, email`,
-            [
-                username,
-                hashedPassword,
-                email
-            ],
-        );
+                [
+                    username,
+                    hashedPassword,
+                    email
+                ],
+            );
 
-        const user = result.rows[0];
+            const user = result.rows[0];
 
-        return user;
+            return user;
+        } catch (err) {
+            return next(err);
+        }
     }
 
     /** Authenticate user with username and password when user logs in.
@@ -66,8 +70,8 @@ class User {
     static async authenticate({ username, password }) {
         const result = await db.query(
             `SELECT id,
-                    password,
                     username,
+                    password,
                     email
                 FROM users
                 WHERE username = $1`,
@@ -93,10 +97,11 @@ class User {
      * Given a username, return user's data.
      * 
      * Returns { id, username, email, saved_book_ids}
-     * where saved_book_ids is { id... }
-   *
-   * Throws NotFoundError if user not found.
-   **/
+     * where saved_book_ids is [id, ...] 
+     *
+     * Throws NotFoundError if user not found.
+     */
+
     static async getUser(username) {
         const userResp = await db.query(
             `SELECT id,
@@ -158,7 +163,7 @@ class User {
 
     /** Delete a user from database given username
      * 
-     * Returns deleted user's username
+     * Returns deleted user's username: { username: '' }
      */
 
     static async delete(username) {

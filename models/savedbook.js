@@ -19,6 +19,7 @@ class SavedBook {
      */
 
     static async addSavedBook(username, data) {
+        //Check if user exists
         const userResp = await db.query(
             `SELECT id, username
                 FROM users
@@ -29,7 +30,7 @@ class SavedBook {
 
         if (!user) throw new NotFoundError(`No user: ${username} not found`)
 
-
+        //Check if book already saved
         const duplicateCheckBook = await db.query(
             `SELECT id, volume_id
                 FROM saved_books
@@ -39,8 +40,9 @@ class SavedBook {
 
         if (duplicateCheckBook.rows[0]) throw new BadRequestError(`Book already saved. Volume Id: ${data.volume_id} `)
 
-        const result = await db.query(
-            `INSERT INTO saved_books
+        try {
+            const result = await db.query(
+                `INSERT INTO saved_books
                     (user_id,
                      volume_id,
                      title,
@@ -52,24 +54,25 @@ class SavedBook {
                      has_read)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                     RETURNING id, user_id, volume_id, title, author, publisher, category, description, image, has_read`,
-            [
-                user.id,
-                data.volume_id,
-                data.title,
-                data.author,
-                data.publisher,
-                data.category,
-                data.description,
-                data.image,
-                data.has_read
-            ],
-        );
+                [
+                    user.id,
+                    data.volume_id,
+                    data.title,
+                    data.author,
+                    data.publisher,
+                    data.category,
+                    data.description,
+                    data.image,
+                    data.has_read
+                ],
+            );
 
-        const savedBook = result.rows[0];
+            const savedBook = result.rows[0];
 
-        if (!savedBook) throw new NotFoundError(`Book not added. Username: ${username}; data: ${data}`)
-
-        return savedBook;
+            return savedBook;
+        } catch (err) {
+            throw new BadRequestError(`Cannot add book to db. Db error: ${err}`)
+        }
     }
 
     /**Update a saved book to Read or Wish To Read 
@@ -129,12 +132,13 @@ class SavedBook {
      * 
      * Given: username and data
      * 
-     * data: has_read
+     * data: has_read = true
      * 
      * Return: [{id, user_id, volume_id, title, author, publisher, category, description, image, has_read}...]
      */
 
     static async getAllReadBooks(username, data) {
+        //Check if user exists
         const userResp = await db.query(
             `SELECT id, username
                 FROM users
@@ -145,15 +149,16 @@ class SavedBook {
 
         if (!user) throw new NotFoundError(`No user: ${username} not found`)
 
+        if (data.has_read === false) throw new BadRequestError(`Cannot get Read books. has_read: ${data.has_read}`)
+
         const result = await db.query(
             `SELECT id, user_id, volume_id, title, author, publisher, category, description, image, has_read
                 FROM saved_books
-                WHERE has_read = $1`, [data.has_read]
+                WHERE user_id = $1
+                AND has_read = $2`, [user.id, data.has_read]
         );
 
         const readBooks = result.rows;
-
-        if (!readBooks) throw new NotFoundError(`No Read saved books. Username: ${username}; data: ${data}`)
 
         return readBooks;
     }
@@ -162,12 +167,13 @@ class SavedBook {
      * 
      * Given: username, data
      * 
-     * data: has_read
+     * data: has_read = false
      * 
      * Return: [{id, user_id, volume_id, title, author, publisher, category, description, image, has_read}...]
      */
 
     static async getAllWishBooks(username, data) {
+        //Check if user exists
         const userResp = await db.query(
             `SELECT id, username
                 FROM users
@@ -178,15 +184,16 @@ class SavedBook {
 
         if (!user) throw new NotFoundError(`No user: ${username} not found`)
 
+        if (data.has_read === true) throw new BadRequestError(`Cannot get Wish To Read books. has_read: ${data.has_read}`)
+
         const result = await db.query(
             `SELECT id, user_id, volume_id, title, author, publisher, category, description, image, has_read
                 FROM saved_books
-                WHERE has_read = $1`, [data.has_read]
+                WHERE user_id = $1
+                AND has_read = $2`, [user.id, data.has_read]
         );
 
         const wishToReadBooks = result.rows;
-
-        if (!wishToReadBooks) throw new NotFoundError(`No Wish To Read saved books. Username: ${username}; data: ${data}`)
 
         return wishToReadBooks;
     }
@@ -224,11 +231,11 @@ class SavedBook {
 
         const savedBook = savedBooksResp.rows[0];
 
-        if (!savedBook) throw new NotFoundError(`No Saved Book Id: ${savedBookId}. Not found.`)
+        if (!savedBook) throw new NotFoundError(`No Saved Book Id: ${savedBookId}.Not found.`)
 
         //Include book review
         const reviewsResp = await db.query(
-            `SELECT id, saved_book_id user_id, comment, created_at, volume_id
+            `SELECT id, saved_book_id, user_id, comment, created_at, volume_id
              FROM reviews
              WHERE saved_book_id = $1
              AND user_id = $2`, [savedBook.id, savedBook.user_id]
@@ -267,7 +274,7 @@ class SavedBook {
      * 
      * id: saved book id
      * 
-     * Returns: {id, username}
+     * Returns: {id}
     */
 
     static async deleteSavedBook(savedBookId, username) {
@@ -291,7 +298,7 @@ class SavedBook {
 
         const deletedBookId = result.rows[0]
 
-        if (!deletedBookId) throw new NotFoundError(`Cannot delete saved book. Saved Book Id: ${savedBookId}`);
+        if (!deletedBookId) throw new NotFoundError(`Cannot delete saved book.Saved Book Id: ${savedBookId}`);
 
         return deletedBookId;
     }

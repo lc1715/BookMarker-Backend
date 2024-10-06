@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const db = require('../db.js');
 const { BCRYPT_WORK_FACTOR } = require('../config.js');
 
+
 const testUserIds = [];
 const testSavedBookIds = [];
 const testReviewIds = [];
@@ -13,7 +14,6 @@ async function commonBeforeAll() {
     await db.query('DELETE FROM saved_books');
     await db.query('DELETE FROM ratings');
     await db.query('DELETE FROM reviews');
-
 
     const resultsUsers = await db.query(`
         INSERT INTO users(username,
@@ -30,7 +30,6 @@ async function commonBeforeAll() {
         ]);
 
     testUserIds.splice(0, 0, ...resultsUsers.rows.map(row => row.id));
-
 
     const resultsSavedBooks = await db.query(`
             INSERT INTO saved_books(user_id,
@@ -50,7 +49,6 @@ async function commonBeforeAll() {
 
     testSavedBookIds.splice(0, 0, ...resultsSavedBooks.rows.map(row => row.id));
 
-
     const resultsReviews = await db.query(`
             INSERT INTO reviews(saved_book_id,
                                 user_id,
@@ -59,10 +57,9 @@ async function commonBeforeAll() {
             VALUES ($1, $2, 'comment1', 11),
                    ($3, $4, 'comment2', 22)
             RETURNING id`,
-        [testSavedBookIds[0], testUserIds[0], testSavedBookIds[1], testUserIds[1]])
+        [testSavedBookIds[0], testUserIds[0], testSavedBookIds[1], testUserIds[1]]);
 
-    testReviewIds.splice(0, 0, ...resultsReviews.rows.map(row => row.id))
-
+    testReviewIds.splice(0, 0, ...resultsReviews.rows.map(row => row.id));
 
     const resultsRatings = await db.query(`
             INSERT INTO ratings(saved_book_id,
@@ -75,7 +72,7 @@ async function commonBeforeAll() {
         [testSavedBookIds[0], testUserIds[0], testSavedBookIds[1], testUserIds[1]]
     );
 
-    testRatingIds.splice(0, 0, ...resultsRatings.rows.map(row => row.id))
+    testRatingIds.splice(0, 0, ...resultsRatings.rows.map(row => row.id));
 }
 
 async function commonBeforeEach() {

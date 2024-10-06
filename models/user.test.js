@@ -16,8 +16,6 @@ const {
     commonAfterAll,
     testUserIds,
     testSavedBookIds,
-    testReviewIds,
-    testRatingIds
 } = require('./_testCommon');
 
 
@@ -62,10 +60,10 @@ describe('register a user', function () {
 
 /********************Authenticate */
 
-describe('authenticate user when they log in', function () {
+describe('authenticate users when they log in', function () {
 
     it('should authenticate user', async function () {
-        const user = await User.authenticate('user1', 'password1');
+        const user = await User.authenticate({ username: 'user1', password: 'password1' });
 
         expect(user).toEqual({
             id: testUserIds[0],
