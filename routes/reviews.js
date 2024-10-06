@@ -5,11 +5,11 @@ const router = new express.Router();
 
 //model to communicate with db
 const Review = require('../models/review');
-//Errors
+//error
 const { BadRequestError } = require('../expressError');
 //middleware 
 const { ensureCorrectUser } = require('../middleware/auth');
-//json schema
+//jsonschema
 const jsonschema = require('jsonschema');
 const reviewSchema = require('../jsonSchemas/review.json')
 
@@ -21,14 +21,13 @@ const reviewSchema = require('../jsonSchemas/review.json')
  * Given: savedBookId, username and data
  * data: {comment, volume_id}
  * 
- * Returns: {id, comment, saved_book_id, user_id, volume_id, created_at}
+ * Returns: {review: {id, comment, saved_book_id, user_id, volume_id, created_at}}
  * 
  * Authorization required: same user as :username
  */
 
 router.post('/savedbook/:savedBookId/user/:username', ensureCorrectUser, async function (req, res, next) {
     try {
-        //use schema to validate req.body
         const validator = jsonschema.validate(req.body, reviewSchema)
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
@@ -49,12 +48,12 @@ router.post('/savedbook/:savedBookId/user/:username', ensureCorrectUser, async f
  * Given: reviewId, username and data
  * data: {comment}
  * 
- * Returns: {id, comment, saved_book_id, user_id, volume_id, created_at}
+ * Returns: {updatedReview: {id, comment, saved_book_id, user_id, volume_id, created_at}}
  * 
  * Authorization required: same user as :username
  */
 
-router.post('/:reviewId/user/:username', ensureCorrectUser, async function (req, res, next) {
+router.patch('/:reviewId/user/:username', ensureCorrectUser, async function (req, res, next) {
     try {
         const updatedReview = await Review.updateReview(req.params.reviewId, req.params.username, req.body);
         return res.json({ updatedReview });
@@ -63,15 +62,14 @@ router.post('/:reviewId/user/:username', ensureCorrectUser, async function (req,
     }
 });
 
-/**Get all book reviews
+/**Get all book reviews on a book
  * 
  * GET route: '/reviews/[volumeId]'
  * 
  * Given: volumeId
  * 
- * Returns: {id, comment, saved_book_id, user_id, volume_id, created_at}
+ * Returns: {allReviews:[{id, comment, created_at, volume_id, saved_book_id, user_id, username}, ...]}
  * 
- * Authorization required: same user as :username
  */
 
 router.get('/:volumeId', async function (req, res, next) {
@@ -89,7 +87,7 @@ router.get('/:volumeId', async function (req, res, next) {
  * 
  * Given: review's id and username
  * 
- * Returns: {id}
+ * Returns: {deletedReview: {id}}
  * 
  * Authorization required: same user as :username
  */
