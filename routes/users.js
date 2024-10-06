@@ -5,13 +5,13 @@ const router = new express.Router();
 
 //model to communciate with db
 const User = require('../models/user');
-//Errors
+//error
 const { BadRequestError } = require('../expressError');
 //middleware 
 const { ensureCorrectUser } = require('../middleware/auth');
 //helper function to get JWT
 const { createToken } = require('../helpers/tokens');
-//json schemas
+//jsonschema
 const jsonschema = require('jsonschema');
 const userRegisterSchema = require('../jsonSchemas/userRegister.json');
 const userLoginSchema = require('../jsonSchemas/userLogin.json');
@@ -24,16 +24,15 @@ const userUpdateSchema = require('../jsonSchemas/userUpdate.json')
  * 
  * To get token, need to create a user
  * 
- * {user} => {token}
- * 
  * user must include {username, password, email}
+ * 
+ * {user} => {token}
  * 
  * Returns: JWT token which can be used to authenticate further requests to protected routes. 
  */
 
 router.post('/register', async function (req, res, next) {
     try {
-        //use schema to validate req.body
         const validator = jsonschema.validate(req.body, userRegisterSchema)
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
@@ -55,9 +54,9 @@ router.post('/register', async function (req, res, next) {
  * 
  * To get token, user needs to be authenticated
  * 
- * {user} => {token}
- * 
  * user must include {username, password}
+ * 
+ * {user} => {token}
  * 
  * Returns: JWT token which can be used to authenticate further requests to protected routes. 
  */
@@ -67,7 +66,6 @@ router.post('/login', async function (req, res, next) {
         const validator = jsonschema.validate(req.body, userLoginSchema)
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
-            console.log('errs, err')
             throw new BadRequestError(errs);
         }
 
@@ -102,7 +100,7 @@ router.get('/:username', ensureCorrectUser, async function (req, res, next) {
  * 
  * PATCH route: '/users/:username'
  * 
- * Returns: { id, username, email }
+ * Returns: {updatedUser: { id, username, email }}
  */
 
 router.patch('/:username', ensureCorrectUser, async function (req, res, next) {
@@ -110,7 +108,6 @@ router.patch('/:username', ensureCorrectUser, async function (req, res, next) {
         const validator = jsonschema.validate(req.body, userUpdateSchema)
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
-            console.log('errs, err')
             throw new BadRequestError(errs);
         }
 
