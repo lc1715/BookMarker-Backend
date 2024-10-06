@@ -54,7 +54,7 @@ function ensureCorrectUser(req, res, next) {
     try {
         const user = res.locals.user;
 
-        if (user.username != req.params.username) {
+        if (!(user && user.username === req.params.username)) {
             throw new UnauthorizedError('Please sign up or log in');
         };
 
@@ -62,7 +62,6 @@ function ensureCorrectUser(req, res, next) {
     } catch (err) {
         return next(err);
     }
-
 }
 
 module.exports = { authenticateJWT, ensureLoggedIn, ensureCorrectUser }
