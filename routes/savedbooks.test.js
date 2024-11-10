@@ -2,7 +2,6 @@
 
 const request = require('supertest');
 const app = require('../app');
-const db = require('../db');
 
 const SavedBook = require('../models/savedbook');
 
@@ -24,6 +23,7 @@ beforeEach(commonBeforeEach)
 afterEach(commonAfterEach)
 afterAll(commonAfterAll)
 
+
 /************************POST /savedbooks/[volumeId]/user/[username] */
 
 describe('POST /savedbooks/[volumeId]/user/[username] ', function () {
@@ -31,7 +31,7 @@ describe('POST /savedbooks/[volumeId]/user/[username] ', function () {
         const res = await request(app)
             .post('/savedbooks/4698/user/user1')
             .send({
-                volume_id: 4698,
+                volume_id: '4698',
                 title: 't1',
                 author: 'a1',
                 publisher: 'p1',
@@ -47,7 +47,7 @@ describe('POST /savedbooks/[volumeId]/user/[username] ', function () {
             savedBook: {
                 id: expect.any(Number),
                 user_id: testUserIds[0],
-                volume_id: 4698,
+                volume_id: '4698',
                 title: 't1',
                 author: 'a1',
                 publisher: 'p1',
@@ -63,7 +63,7 @@ describe('POST /savedbooks/[volumeId]/user/[username] ', function () {
         const resp = await request(app)
             .post('/savedbooks/4698/user/wrong')
             .send({
-                volume_id: 4698,
+                volume_id: '4698',
                 title: 't1',
                 author: 'a1',
                 publisher: 'p1',
@@ -104,12 +104,12 @@ describe('POST /savedbooks/[volumeId]/user/[username] ', function () {
     });
 });
 
-/************************PATCH /savedbooks/[id]/user/[username] */
+/************************PATCH /savedbooks/[volumeId]/user/[username] */
 
-describe('PATCH /savedbooks/[id]/user/[username] ', function () {
+describe('PATCH /savedbooks/[volumeId]/user/[username] ', function () {
     it('it should update a book to Wish To Read status', async function () {
         const res = await request(app)
-            .patch(`/savedbooks/${testSavedBookIds[0]}/user/user1`)
+            .patch(`/savedbooks/11/user/user1`)
             .send({
                 has_read: false
             })
@@ -119,7 +119,7 @@ describe('PATCH /savedbooks/[id]/user/[username] ', function () {
             updatedBook: {
                 id: testSavedBookIds[0],
                 user_id: testUserIds[0],
-                volume_id: 11,
+                volume_id: '11',
                 title: 'title1',
                 author: 'author1',
                 publisher: 'pub1',
@@ -133,7 +133,7 @@ describe('PATCH /savedbooks/[id]/user/[username] ', function () {
 
     it('it should update a book to Read status', async function () {
         const res = await request(app)
-            .patch(`/savedbooks/${testSavedBookIds[1]}/user/user2`)
+            .patch(`/savedbooks/22/user/user2`)
             .send({
                 has_read: true
             })
@@ -143,7 +143,7 @@ describe('PATCH /savedbooks/[id]/user/[username] ', function () {
             updatedBook: {
                 id: testSavedBookIds[1],
                 user_id: testUserIds[1],
-                volume_id: 22,
+                volume_id: '22',
                 title: 'title2',
                 author: 'author2',
                 publisher: 'pub2',
@@ -178,7 +178,7 @@ describe('PATCH /savedbooks/[id]/user/[username] ', function () {
 
     it('returns unauthorized error with incorrect username', async function () {
         const res = await request(app)
-            .patch(`/savedbooks/${testSavedBookIds[0]}/user/wrong`)
+            .patch(`/savedbooks/11/user/wrong`)
             .send({
                 has_read: true
             })
@@ -189,7 +189,7 @@ describe('PATCH /savedbooks/[id]/user/[username] ', function () {
 
     it('returns unauthorized error if user does not exist', async function () {
         const res = await request(app)
-            .patch(`/savedbooks/${testSavedBookIds[0]}/user/user1`)
+            .patch(`/savedbooks/11/user/user1`)
             .send({
                 has_read: true
             })
@@ -204,7 +204,7 @@ describe('GET /savedbooks/read/user/[username]', function () {
     it('gets all books in Read status', async function () {
         const res = await request(app)
             .get(`/savedbooks/read/user/user1`)
-            .send({
+            .query({
                 has_read: true
             })
             .set('authorization', `Bearer ${user1Token}`)
@@ -213,7 +213,7 @@ describe('GET /savedbooks/read/user/[username]', function () {
             readBooks: [{
                 id: testSavedBookIds[0],
                 user_id: testUserIds[0],
-                volume_id: 11,
+                volumeId: '11',
                 title: 'title1',
                 author: 'author1',
                 publisher: 'pub1',
@@ -228,8 +228,8 @@ describe('GET /savedbooks/read/user/[username]', function () {
     it('returns bad request error with incorrect data', async function () {
         const res = await request(app)
             .get(`/savedbooks/read/user/user1`)
-            .send({
-                has_read: false
+            .query({
+                has_read: 'false'
             })
             .set('authorization', `Bearer ${user1Token}`);
 
@@ -239,7 +239,7 @@ describe('GET /savedbooks/read/user/[username]', function () {
     it('returns unauthorized error with incorrect username', async function () {
         const res = await request(app)
             .get(`/savedbooks/read/user/wrong`)
-            .send({
+            .query({
                 has_read: true
             })
             .set('authorization', `Bearer ${user1Token}`);
@@ -250,7 +250,7 @@ describe('GET /savedbooks/read/user/[username]', function () {
     it('returns unauthorized error if user does not exist', async function () {
         const res = await request(app)
             .get(`/savedbooks/read/user/user1`)
-            .send({
+            .query({
                 has_read: true
             })
 
@@ -264,7 +264,7 @@ describe('GET /savedbooks/wish/user/[username]', function () {
     it('gets all books in Wish To Read status', async function () {
         const res = await request(app)
             .get(`/savedbooks/wish/user/user2`)
-            .send({
+            .query({
                 has_read: false
             })
             .set('authorization', `Bearer ${user2Token}`)
@@ -273,7 +273,7 @@ describe('GET /savedbooks/wish/user/[username]', function () {
             wishBooks: [{
                 id: testSavedBookIds[1],
                 user_id: testUserIds[1],
-                volume_id: 22,
+                volumeId: '22',
                 title: 'title2',
                 author: 'author2',
                 publisher: 'pub2',
@@ -288,7 +288,7 @@ describe('GET /savedbooks/wish/user/[username]', function () {
     it('returns bad request error with incorrect data', async function () {
         const res = await request(app)
             .get(`/savedbooks/wish/user/user2`)
-            .send({
+            .query({
                 has_read: true
             })
             .set('authorization', `Bearer ${user2Token}`);
@@ -299,7 +299,7 @@ describe('GET /savedbooks/wish/user/[username]', function () {
     it('returns unauthorized error with incorrect username', async function () {
         const res = await request(app)
             .get(`/savedbooks/wish/user/wrong`)
-            .send({
+            .query({
                 has_read: false
             })
             .set('authorization', `Bearer ${user2Token}`);
@@ -310,7 +310,7 @@ describe('GET /savedbooks/wish/user/[username]', function () {
     it('returns unauthorized error if user does not exist', async function () {
         const res = await request(app)
             .get(`/savedbooks/wish/user/user2`)
-            .send({
+            .query({
                 has_read: false
             })
 
@@ -318,20 +318,20 @@ describe('GET /savedbooks/wish/user/[username]', function () {
     });
 });
 
-/************************GET /savedbooks/[id]/user/[username] */
+/************************GET /savedbooks/[volumeId]/user/[username] */
 
-describe('GET /savedbooks/[id]/user/[username]', function () {
+describe('GET /savedbooks/[volumeId]/user/[username]', function () {
     it('gets a saved book with review and rating', async function () {
 
         const res = await request(app)
-            .get(`/savedbooks/${testSavedBookIds[0]}/user/user1`)
+            .get(`/savedbooks/11/user/user1`)
             .set('authorization', `Bearer ${user1Token}`)
 
         expect(res.body).toEqual({
             savedBook: {
                 id: testSavedBookIds[0],
                 user_id: testUserIds[0],
-                volume_id: 11,
+                volume_id: '11',
                 title: 'title1',
                 author: 'author1',
                 publisher: 'pub1',
@@ -341,34 +341,34 @@ describe('GET /savedbooks/[id]/user/[username]', function () {
                 has_read: true,
                 review: {
                     id: testReviewIds[0],
-                    saved_book_id: testSavedBookIds[0],
                     user_id: testUserIds[0],
                     comment: 'comment1',
                     created_at: expect.any(String),
-                    volume_id: 11
+                    volume_id: '11'
                 },
                 rating: {
                     id: testRatingIds[0],
-                    saved_book_id: testSavedBookIds[0],
                     user_id: testUserIds[0],
                     rating: 5,
-                    volume_id: 11
+                    volume_id: '11'
                 }
             }
         });
     });
 
-    it('returns not found error with invalid book id', async function () {
+    it('returns null with invalid volume id', async function () {
         const res = await request(app)
             .get(`/savedbooks/999/user/user1`)
             .set('authorization', `Bearer ${user1Token}`);
 
-        expect(res.statusCode).toEqual(404);
+        expect(res.body).toEqual({
+            savedBook: null
+        });
     });
 
     it('returns unauthorized error with incorrect username', async function () {
         const res = await request(app)
-            .get(`/savedbooks/${testSavedBookIds[0]}/user/wrong`)
+            .get(`/savedbooks/${testRatingIds[0]}/user/wrong`)
             .set('authorization', `Bearer ${user1Token}`);
 
         expect(res.statusCode).toEqual(401);
@@ -376,30 +376,30 @@ describe('GET /savedbooks/[id]/user/[username]', function () {
 
     it('returns unauthorized error if user does not exist', async function () {
         const res = await request(app)
-            .get(`/savedbooks/${testSavedBookIds[0]}/user/wrong`)
+            .get(`/savedbooks/${testRatingIds[0]}/user/wrong`)
 
         expect(res.statusCode).toEqual(401);
     });
 });
 
-/************************DELETE /savedbooks/[id]/user/[username]*/
+/************************DELETE /savedbooks/[volumeId]/user/[username]*/
 
-describe('DELETE /savedbooks/[id]/user/[username]', function () {
+describe('DELETE /savedbooks/[volumeId]/user/[username]', function () {
     it('should delete a saved book', async function () {
         const res = await request(app)
-            .delete(`/savedbooks/${testSavedBookIds[0]}/user/user1`)
+            .delete(`/savedbooks/11/user/user1`)
             .set('authorization', `Bearer ${user1Token}`)
 
         expect(res.body).toEqual({
-            deletedBook: {
-                id: testSavedBookIds[0],
+            deletedBookId: {
+                volume_id: '11',
             }
         });
     });
 
     it('returns unauthorized error with incorrect username', async function () {
         const res = await request(app)
-            .delete(`/savedbooks/${testSavedBookIds[0]}/user/wrong`)
+            .delete(`/savedbooks/11/user/wrong`)
             .set('authorization', `Bearer ${user1Token}`);
 
         expect(res.statusCode).toEqual(401);
@@ -407,7 +407,7 @@ describe('DELETE /savedbooks/[id]/user/[username]', function () {
 
     it('returns unauthorized error if user does not exist', async function () {
         const res = await request(app)
-            .delete(`/savedbooks/${testSavedBookIds[0]}/user/user1`)
+            .delete(`/savedbooks/11/user/user1`)
 
         expect(res.statusCode).toEqual(401);
     });

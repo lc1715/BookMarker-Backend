@@ -42,35 +42,33 @@ async function commonBeforeAll() {
                                     description,
                                     image,
                                     has_read)
-            VALUES ($1, 11, 'title1', 'author1', 'pub1', 'cat1', 'des1', 'image1', true),
-                   ($2, 22, 'title2', 'author2', 'pub2', 'cat2', 'des2', 'image2', false),
-                   ($3, 33, 'title3', 'author3', 'pub3', 'cat3', 'des3', 'image3', true)
-            RETURNING id`,
+            VALUES ($1, '11', 'title1', 'author1', 'pub1', 'cat1', 'des1', 'image1', true),
+                   ($2, '22', 'title2', 'author2', 'pub2', 'cat2', 'des2', 'image2', false),
+                   ($3, '33', 'title3', 'author3', 'pub3', 'cat3', 'des3', 'image3', true)
+            RETURNING id, volume_id`,
         [testUserIds[0], testUserIds[1], testUserIds[2]]);
 
     testSavedBookIds.splice(0, 0, ...resultsSavedBooks.rows.map(row => row.id));
 
     const resultsReviews = await db.query(`
-            INSERT INTO reviews(saved_book_id,
-                                user_id,
-                                comment,
-                                volume_id)
-            VALUES ($1, $2, 'comment1', 11),
-                   ($3, $4, 'comment2', 22)
-            RETURNING id`,
-        [testSavedBookIds[0], testUserIds[0], testSavedBookIds[1], testUserIds[1]])
+        INSERT INTO reviews(user_id,
+                            volume_id,
+                            comment)
+        VALUES ($1, $2, 'comment1'),
+               ($3, $4, 'comment2')
+        RETURNING id`,
+        [testUserIds[0], '11', testUserIds[1], '22']);
 
-    testReviewIds.splice(0, 0, ...resultsReviews.rows.map(row => row.id))
+    testReviewIds.splice(0, 0, ...resultsReviews.rows.map(row => row.id));
 
     const resultsRatings = await db.query(`
-            INSERT INTO ratings(saved_book_id,
-                                user_id,
-                                rating,
-                                volume_id)
-            VALUES ($1, $2, 5, 11),
-                   ($3, $4, 2, 22)
-            RETURNING id`,
-        [testSavedBookIds[0], testUserIds[0], testSavedBookIds[1], testUserIds[1]]
+        INSERT INTO ratings(user_id,
+                            volume_id,
+                            rating)
+        VALUES ($1, '11', 5),
+               ($2, '22', 2)
+        RETURNING id`,
+        [testUserIds[0], testUserIds[1]]
     );
 
     testRatingIds.splice(0, 0, ...resultsRatings.rows.map(row => row.id))
