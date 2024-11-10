@@ -16,17 +16,17 @@ const reviewSchema = require('../jsonSchemas/review.json')
 
 /**Add a book review
  * 
- * POST route: '/reviews/savedbook/[savedBookId]/user/[username]'
+ * POST route: '/reviews/[volumeId]/user/[username]'
  * 
- * Given: savedBookId, username and data
- * data: {comment, volume_id}
+ * Given: volumeId, username and data
+ * data: {comment}
  * 
- * Returns: {review: {id, comment, saved_book_id, user_id, volume_id, created_at}}
+ * Returns: {review: {id, comment, user_id, volume_id, created_at}}
  * 
  * Authorization required: same user as :username
  */
 
-router.post('/savedbook/:savedBookId/user/:username', ensureCorrectUser, async function (req, res, next) {
+router.post('/:volumeId/user/:username', ensureCorrectUser, async function (req, res, next) {
     try {
         const validator = jsonschema.validate(req.body, reviewSchema)
         if (!validator.valid) {
@@ -34,7 +34,7 @@ router.post('/savedbook/:savedBookId/user/:username', ensureCorrectUser, async f
             throw new BadRequestError(errs);
         }
 
-        const review = await Review.addReview(req.params.savedBookId, req.params.username, req.body);
+        const review = await Review.addReview(req.params.volumeId, req.params.username, req.body);
         return res.status(201).json({ review });
     } catch (err) {
         return next(err);
