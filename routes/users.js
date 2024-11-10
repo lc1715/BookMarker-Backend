@@ -81,10 +81,11 @@ router.post('/login', async function (req, res, next) {
  * 
  * GET route: '/users/:username'
  * 
- * Returns: {user: { id, username, email, saved_booksId}}
- * where saved_booksId is [id, ...] 
+ * Returns: {user: { id, username, email, volume_ids}}
+ * where volume_ids is [id, ...] 
  *
  */
+
 router.get('/:username', ensureCorrectUser, async function (req, res, next) {
     try {
         const user = await User.getUser(req.params.username);
