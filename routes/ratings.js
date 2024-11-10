@@ -1,4 +1,3 @@
-
 "use strict";
 
 const express = require('express');
@@ -14,19 +13,19 @@ const { ensureCorrectUser } = require('../middleware/auth');
 
 /**Add a book rating
  * 
- * POST route: '/ratings/savedbook/[savedBookId]/user/[username]'
+ * POST route: '/ratings/[volumeId]/user/[username]'
  * 
- * Given: savedBookId, username and data
- * data: {rating, volume_id}
+ * Given: volumeId, username and data
+ * data: {rating}
  * 
- * Returns: {rating: {id, rating, saved_book_id, user_id, volume_id}}
+ * Returns: {rating: {id, rating, user_id, volume_id}}
  * 
  * Authorization required: same user as :username
  */
 
-router.post('/savedbook/:savedBookId/user/:username', ensureCorrectUser, async function (req, res, next) {
+router.post('/:volumeId/user/:username', ensureCorrectUser, async function (req, res, next) {
     try {
-        const rating = await Rating.addRating(req.params.savedBookId, req.params.username, req.body)
+        const rating = await Rating.addRating(req.params.volumeId, req.params.username, req.body)
         return res.status(201).json({ rating });
     } catch (err) {
         return next(err);
@@ -40,7 +39,7 @@ router.post('/savedbook/:savedBookId/user/:username', ensureCorrectUser, async f
  * Given: rating id, username and data
  * data: {rating}
  * 
- * Returns: {updatedRating: {id, rating, saved_book_id, user_id, volume_id}}
+ * Returns: {updatedRating: {id, rating, user_id, volume_id}}
  * 
  * Authorization required: same user as :username
  */
@@ -56,20 +55,41 @@ router.patch('/:id/user/:username', ensureCorrectUser, async function (req, res,
 
 /**Get a book rating
  * 
- * GET route: '/ratings/[savedBookId]/user/[username]'
+ * GET route: '/ratings/volumeId/user/[username]'
  * 
- * Given: saved book id, username
+ * Given: volumeId, username
  * 
- * Returns: {rating: {id, rating, saved_book_id, user_id, volume_id}}
+ * Returns: {rating: {id, rating, user_id, volume_id}}
  * 
  * Authorization required: same user as :username
  */
-router.get('/:savedBookId/user/:username', async function (req, res, next) {
+router.get('/:volumeId/user/:username', async function (req, res, next) {
     try {
-        const rating = await Rating.getRating(req.params.savedBookId, req.params.username)
+        const rating = await Rating.getRating(req.params.volumeId, req.params.username)
         return res.json({ rating });
     } catch (err) {
         return next(err);
+    }
+});
+
+/**Delete a book rating
+ * 
+ * DELETE route: '/ratings/[id]/user/[username]'
+ * 
+ * Given: rating's id and username
+ * 
+ * Returns: {deletedRating: {id}}
+ * 
+ * Authorization required: same user as :username
+ */
+
+router.delete('/:id/user/:username', ensureCorrectUser, async function (req, res, next) {
+    try {
+        const deletedRating = await Rating.deleteRating(req.params.id, req.params.username);
+        return res.json({ deletedRating });
+    } catch (err) {
+        return next(err);
+
     }
 });
 

@@ -2,9 +2,8 @@
 
 const request = require('supertest');
 const app = require('../app');
-const db = require('../db');
 
-const Review = require('../models/review');
+const Rating = require('../models/rating');
 
 const {
     commonBeforeAll,
@@ -12,29 +11,24 @@ const {
     commonAfterEach,
     commonAfterAll,
     testUserIds,
-    testSavedBookIds,
-    testReviewIds,
     testRatingIds,
     user1Token,
-    user2Token,
     user3Token
 } = require('./_testCommon');
-const { italic } = require('colors');
 
 beforeAll(commonBeforeAll)
 beforeEach(commonBeforeEach)
 afterEach(commonAfterEach)
 afterAll(commonAfterAll)
 
-/***********************POST /ratings/savedbook/[savedBookId]/user/[username]*/
+/***********************POST /ratings/[volumeId]/user/[username]*/
 
-describe('POST /ratings/savedbook/[savedBookId]/user/[username]', function () {
+describe('POST /ratings/[volumeId]/user/[username]', function () {
     it('should create a book rating', async function () {
         const res = await request(app)
-            .post(`/ratings/savedbook/${testSavedBookIds[2]}/user/user3`)
+            .post(`/ratings/33/user/user3`)
             .send({
-                rating: 5,
-                volume_id: 33
+                rating: 5
             })
             .set('authorization', `Bearer ${user3Token}`)
 
@@ -43,42 +37,28 @@ describe('POST /ratings/savedbook/[savedBookId]/user/[username]', function () {
             rating: {
                 id: expect.any(Number),
                 rating: 5,
-                saved_book_id: testSavedBookIds[2],
                 user_id: testUserIds[2],
-                volume_id: 33
+                volume_id: '33'
             }
         });
     });
 
     it('returns bad request error if invalid data', async function () {
         const res = await request(app)
-            .post(`/ratings/savedbook/${testSavedBookIds[2]}/user/user3`)
+            .post(`/ratings/33/user/user3`)
             .send({
-                volume_id: 33
+                rating: 'asfet'
             })
             .set('authorization', `Bearer ${user3Token}`)
 
         expect(res.statusCode).toEqual(400);
     });
 
-    it('returns not found error if book not already saved by user', async function () {
-        const res = await request(app)
-            .post(`/ratings/savedbook/999/user/user3`)
-            .send({
-                rating: 5,
-                volume_id: 33
-            })
-            .set('authorization', `Bearer ${user3Token}`)
-
-        expect(res.statusCode).toEqual(404);
-    });
-
     it('returns not found error with incorrect username', async function () {
         const res = await request(app)
-            .post(`/ratings/savedbook/${testSavedBookIds[2]}/user/wrong`)
+            .post(`/ratings/33/user/wrong`)
             .send({
-                rating: 5,
-                volume_id: 33
+                rating: 5
             })
             .set('authorization', `Bearer ${user3Token}`)
 
@@ -87,10 +67,9 @@ describe('POST /ratings/savedbook/[savedBookId]/user/[username]', function () {
 
     it('returns unauthorized error if user does not exist', async function () {
         const res = await request(app)
-            .post(`/ratings/savedbook/${testSavedBookIds[2]}/user/user3`)
+            .post(`/ratings/33/user/user3`)
             .send({
-                rating: 5,
-                volume_id: 33
+                rating: 5
             })
 
         expect(res.statusCode).toEqual(401);
@@ -112,9 +91,8 @@ describe('PATCH /ratings/[id]/user/[username]', function () {
             updatedRating: {
                 id: testRatingIds[0],
                 rating: 3,
-                saved_book_id: testSavedBookIds[0],
                 user_id: testUserIds[0],
-                volume_id: 11
+                volume_id: '11'
             }
         });
     });
@@ -142,38 +120,68 @@ describe('PATCH /ratings/[id]/user/[username]', function () {
     });
 });
 
-/***********************GET /ratings/[savedBookId]/user/[username]*/
+/***********************GET /ratings/[volumeId]/user/[username]*/
 
-describe('GET /ratings/[savedBookId]/user/[username]', function () {
+describe('GET /ratings/[volumeId]/user/[username]', function () {
     it('should get a book rating', async function () {
         const res = await request(app)
-            .get(`/ratings/${testSavedBookIds[0]}/user/user1`)
+            .get(`/ratings/11/user/user1`)
             .set('authorization', `Bearer ${user1Token}`)
 
         expect(res.body).toEqual({
             rating: {
                 id: testRatingIds[0],
                 rating: 5,
-                saved_book_id: testSavedBookIds[0],
                 user_id: testUserIds[0],
-                volume_id: 11
+                volume_id: '11'
             }
         });
     });
 
-    it('returns not found error if book not already saved by user', async function () {
+    it('should throw not found error with incorrect username', async function () {
         const res = await request(app)
-            .get(`/ratings/999/user/user1`)
-            .set('authorization', `Bearer ${user3Token}`)
+            .get(`/ratings/11/user/wrong`)
+            .set('authorization', `Bearer ${user1Token}`)
+
+        expect(res.statusCode).toEqual(404);
+    });
+});
+
+/***********************DELETE /ratings/[id]/user/[username]*/
+
+describe('DELETE /ratings/[id]/user/[username]', function () {
+    it('should delete a rating', async function () {
+        const res = await request(app)
+            .delete(`/ratings/${testRatingIds[0]}/user/user1`)
+            .set('authorization', `Bearer ${user1Token}`)
+
+        expect(res.body).toEqual({
+            deletedRating: {
+                id: testRatingIds[0]
+            }
+        })
+    });
+
+    it('returns not found error if rating not found', async function () {
+        const res = await request(app)
+            .delete(`/ratings/999/user/user1`)
+            .set('authorization', `Bearer ${user1Token}`)
 
         expect(res.statusCode).toEqual(404);
     });
 
-    it('should throw not found error with incorrect username', async function () {
+    it('returns not found error with incorrect username', async function () {
         const res = await request(app)
-            .get(`/ratings/${testSavedBookIds[0]}/user/wrong`)
+            .delete(`/ratings/${testRatingIds[0]}/user/wrong`)
             .set('authorization', `Bearer ${user1Token}`)
 
-        expect(res.statusCode).toEqual(404);
+        expect(res.statusCode).toEqual(401);
+    });
+
+    it('returns unauthorized error if user does not exist', async function () {
+        const res = await request(app)
+            .delete(`/ratings/${testRatingIds[0]}/user/user1`)
+
+        expect(res.statusCode).toEqual(401);
     });
 });
