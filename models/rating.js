@@ -10,16 +10,16 @@ const {
 
 class Rating {
 
-    /**Add a book rating given savedBookId, username, data
+    /**Add a book rating given volumeId, username, data
      * 
-     * data: rating, volume_id
+     * data: rating
      * 
-     * Returns: {id, rating, saved_book_id, user_id, volume_id}
+     * Returns: {id, rating, user_id, volume_id}
      * 
      * id: rating id
      */
 
-    static async addRating(savedBookId, username, data) {
+    static async addRating(volumeId, username, data) {
         //check if user exists
         const preCheckUser = await db.query(
             `SELECT id, username
@@ -31,28 +31,15 @@ class Rating {
 
         if (!user) throw new NotFoundError(`No User: ${username} Not Found`)
 
-        //check if saved book id and volume id are both in saved_books table
-        const preCheckBook = await db.query(
-            `SELECT id, volume_id
-              FROM saved_books
-              WHERE id = $1
-              AND volume_id = $2`, [savedBookId, data.volume_id]
-        );
-
-        const book = preCheckBook.rows[0]
-
-        if (!book) throw new NotFoundError(`Cannot find Book Id: ${savedBookId} or Volume Id: ${data.volume_id} in saved_books table`)
-
         try {
             const result = await db.query(
                 `INSERT INTO ratings
-                        (saved_book_id,
-                         user_id,
-                         rating,
-                         volume_id)
-                    VALUES ($1, $2, $3, $4)
-                    RETURNING id, rating, saved_book_id, user_id, volume_id`,
-                [savedBookId, user.id, data.rating, data.volume_id]
+                        (user_id,
+                         volume_id,
+                         rating)
+                    VALUES ($1, $2, $3)
+                    RETURNING id, rating, user_id, volume_id`,
+                [user.id, volumeId, data.rating]
             )
 
             const rating = result.rows[0];
@@ -89,7 +76,7 @@ class Rating {
                     SET rating = $1
                     WHERE user_id = $2
                     AND id = $3
-                    RETURNING id, rating, saved_book_id, user_id, volume_id`,
+                    RETURNING id, rating, user_id, volume_id`,
             [data.rating, user.id, ratingId])
 
         const updatedRating = result.rows[0];
@@ -99,12 +86,12 @@ class Rating {
         return updatedRating;
     }
 
-    /**Get a book rating given savedBookId and username
+    /**Get a book rating given volumeId and username
      * 
-     * Returns: {id, rating, saved_book_id, user_id, volume_id}
+     * Returns: {id, rating, user_id, volume_id}
     */
 
-    static async getRating(savedBookId, username) {
+    static async getRating(volumeId, username) {
         //check if user exists
         const preCheckUser = await db.query(
             `SELECT id, username
@@ -116,29 +103,50 @@ class Rating {
 
         if (!user) throw new NotFoundError(`User: ${username} Not Found`)
 
-        //check if savedBookId already exists in saved_books table
-        const preCheckBook = await db.query(
-            `SELECT id
-              FROM saved_books
-              WHERE id = $1`, [savedBookId]
-        );
-
-        const book = preCheckBook.rows[0]
-
-        if (!book) throw new NotFoundError(`BookId: ${savedBookId} Not Found`)
-
         const result = await db.query(
-            `SELECT id, rating, saved_book_id, user_id, volume_id
+            `SELECT id, rating, user_id, volume_id
                 FROM ratings
                 WHERE user_id = $1
-                AND saved_book_id = $2`, [user.id, savedBookId]
+                AND volume_id = $2`, [user.id, volumeId]
         );
 
-        const rating = result.rows[0]
+        let rating;
 
-        if (!rating) throw new NotFoundError(`Rating not found. `)
+        result.rows[0] ? rating = result.rows[0] : rating = null;
 
         return rating;
+    }
+
+    /**Delete a book rating given ratingId and username
+     * 
+     * Returns: deleted rating id
+    */
+
+    static async deleteRating(ratingId, username) {
+        //check if user exists
+        const preCheckUser = await db.query(
+            `SELECT id, username
+                  FROM users
+                  WHERE username = $1`, [username]
+        );
+
+        const user = preCheckUser.rows[0];
+
+        if (!user) throw new NotFoundError(`No User: ${username} Not Found`)
+
+        let ratingResp = await db.query(
+            `DELETE 
+                    FROM ratings
+                    WHERE user_id = $1
+                    AND id = $2
+                    RETURNING id`, [user.id, ratingId]
+        );
+
+        const deletedRatingId = ratingResp.rows[0];
+
+        if (!deletedRatingId) throw new NotFoundError(`Rating not found. Rating Id: ${ratingId}`)
+
+        return deletedRatingId;
     }
 }
 
