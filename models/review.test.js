@@ -1,6 +1,5 @@
 "use strict";
 
-const db = require('../db.js')
 const Review = require('./review.js')
 
 const {
@@ -15,7 +14,6 @@ const {
     commonAfterEach,
     commonAfterAll,
     testUserIds,
-    testSavedBookIds,
     testReviewIds,
 } = require('./_testCommon');
 
@@ -29,29 +27,19 @@ afterAll(commonAfterAll);
 describe('add a book review', function () {
     const reviewData = {
         comment: 'test comment',
-        volume_id: 33
+        volume_id: '33'
     }
 
     it('should successfully add a book review', async function () {
-        const review = await Review.addReview(testSavedBookIds[2], 'user3', reviewData)
+        const review = await Review.addReview('33', 'user3', reviewData)
 
         expect(review).toEqual({
             id: expect.any(Number),
             comment: 'test comment',
-            saved_book_id: testSavedBookIds[2],
+            volume_id: '33',
             user_id: testUserIds[2],
-            volume_id: 33,
             created_at: expect.any(Date)
         })
-    });
-
-    it('should throw NotFoundError if book has not been saved by the user', async function () {
-        try {
-            await Review.addReview(3426, 'user3', reviewData);
-            fail();
-        } catch (err) {
-            expect(err instanceof NotFoundError).toBeTruthy();
-        }
     });
 
     it('should throw ForbiddenError if user tries to add more than 1 review', async function () {
@@ -61,7 +49,7 @@ describe('add a book review', function () {
         }
 
         try {
-            await Review.addReview(testSavedBookIds[0], 'user1', dupReview);
+            await Review.addReview('11', 'user1', dupReview);
             fail();
         } catch (err) {
             expect(err instanceof ForbiddenError).toBeTruthy();
@@ -70,8 +58,8 @@ describe('add a book review', function () {
 
     it('should throw BadRequestError if review has insuffient data', async function () {
         try {
-            await Review.addReview(testSavedBookIds[2], 'user3', {
-                volume_id: 33
+            await Review.addReview('33', 'user3', {
+                volume_id: '33'
             });
             fail();
         } catch (err) {
@@ -81,7 +69,7 @@ describe('add a book review', function () {
 
     it('should throw NotFoundError with incorrect username', async function () {
         try {
-            await Review.addReview(testSavedBookIds[0], 'wrong', reviewData);
+            await Review.addReview('11', 'wrong', reviewData);
             fail();
         } catch (err) {
             expect(err instanceof NotFoundError).toBeTruthy();
@@ -102,9 +90,8 @@ describe('update a book review', function () {
         expect(newReview).toEqual({
             id: testReviewIds[0],
             comment: 'new comment',
-            saved_book_id: testSavedBookIds[0],
+            volume_id: '11',
             user_id: testUserIds[0],
-            volume_id: 11,
             created_at: expect.any(Date)
         });
     });
@@ -120,7 +107,7 @@ describe('update a book review', function () {
 
     it('should throw NotFoundError with incorrect username', async function () {
         try {
-            await Review.updateReview(testSavedBookIds[0], 'wrong', reviewData);
+            await Review.updateReview('11', 'wrong', reviewData);
             fail();
         } catch (err) {
             expect(err instanceof NotFoundError).toBeTruthy();
@@ -138,8 +125,7 @@ describe('get all reviews on a book', function () {
             id: testReviewIds[0],
             comment: 'comment1',
             created_at: expect.any(Date),
-            volume_id: 11,
-            saved_book_id: testSavedBookIds[0],
+            volume_id: '11',
             user_id: testUserIds[0],
             username: 'user1'
         }])

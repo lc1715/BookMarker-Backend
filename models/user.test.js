@@ -15,7 +15,6 @@ const {
     commonAfterEach,
     commonAfterAll,
     testUserIds,
-    testSavedBookIds,
 } = require('./_testCommon');
 
 
@@ -100,7 +99,7 @@ describe('get a single user', function () {
             id: testUserIds[0],
             username: 'user1',
             email: 'user1@email.com',
-            saved_book_ids: [testSavedBookIds[0]]
+            volume_ids: ['11']
         });
     });
 

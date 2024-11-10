@@ -1,6 +1,5 @@
 "use strict";
 
-const db = require('../db.js');
 const SavedBook = require('./savedbook.js');
 
 const {
@@ -24,11 +23,12 @@ beforeEach(commonBeforeEach);
 afterEach(commonAfterEach);
 afterAll(commonAfterAll);
 
+
 /****************Add saved books*/
 
 describe('add saved books', function () {
     const bookData = {
-        volume_id: 4698,
+        volume_id: '4698',
         title: 't1',
         author: 'a1',
         publisher: 'p1',
@@ -44,7 +44,7 @@ describe('add saved books', function () {
         expect(savedBook).toEqual({
             id: expect.any(Number),
             user_id: testUserIds[0],
-            volume_id: 4698,
+            volume_id: '4698',
             title: 't1',
             author: 'a1',
             publisher: 'p1',
@@ -56,7 +56,7 @@ describe('add saved books', function () {
     });
 
     const dupBookData = {
-        volume_id: 11,
+        volume_id: '11',
         title: 't1',
         author: 'a1',
         publisher: 'p1',
@@ -105,7 +105,7 @@ describe('update a saved book to Read or Wish To Read status', function () {
     }
 
     it('should change has_read status to false', async function () {
-        const book = await SavedBook.updateReadOrWishStatus(testSavedBookIds[0], 'user1', bookData1);
+        const book = await SavedBook.updateReadOrWishStatus('11', 'user1', bookData1);
 
         expect(book.has_read).toEqual(false);
     });
@@ -115,7 +115,7 @@ describe('update a saved book to Read or Wish To Read status', function () {
     }
 
     it('should change has_read status to true', async function () {
-        const book = await SavedBook.updateReadOrWishStatus(testSavedBookIds[0], 'user1', bookData2);
+        const book = await SavedBook.updateReadOrWishStatus('11', 'user1', bookData2);
 
         expect(book.has_read).toEqual(true);
     });
@@ -143,7 +143,7 @@ describe('gets all Read books for user', function () {
         expect(readBook).toEqual([{
             id: testSavedBookIds[0],
             user_id: testUserIds[0],
-            volume_id: 11,
+            volumeId: '11',
             title: 'title1',
             author: 'author1',
             publisher: 'pub1',
@@ -186,7 +186,7 @@ describe('gets Wish To Read books for user', function () {
         expect(readBook).toEqual([{
             id: testSavedBookIds[1],
             user_id: testUserIds[1],
-            volume_id: 22,
+            volumeId: '22',
             title: 'title2',
             author: 'author2',
             publisher: 'pub2',
@@ -220,12 +220,12 @@ describe('gets Wish To Read books for user', function () {
 
 describe(`get a saved book's info`, function () {
     it('should get a single saved book', async function () {
-        const savedBook = await SavedBook.getSavedBook(testSavedBookIds[0], 'user1')
+        const savedBook = await SavedBook.getSavedBook('11', 'user1')
 
         expect(savedBook).toEqual({
             id: testSavedBookIds[0],
             user_id: testUserIds[0],
-            volume_id: 11,
+            volume_id: '11',
             title: 'title1',
             author: 'author1',
             publisher: 'pub1',
@@ -235,34 +235,32 @@ describe(`get a saved book's info`, function () {
             has_read: true,
             review: {
                 id: testReviewIds[0],
-                saved_book_id: testSavedBookIds[0],
+                volume_id: '11',
                 user_id: testUserIds[0],
                 comment: 'comment1',
                 created_at: expect.any(Date),
-                volume_id: 11
             },
             rating: {
                 id: testRatingIds[0],
-                saved_book_id: testSavedBookIds[0],
+                volume_id: '11',
                 user_id: testUserIds[0],
                 rating: 5,
-                volume_id: 11
             }
         });
     });
 
-    it('should throw NotFoundError with incorrect saved book id', async function () {
+    it('should return null with incorrect volume id', async function () {
         try {
-            await SavedBook.getSavedBook('85158713457');
+            await SavedBook.getSavedBook('999', 'user1');
             fail();
         } catch (err) {
-            expect(err instanceof NotFoundError).toBeTruthy();
+            expect(null);
         }
     });
 
     it('should throw NotFoundError with incorrect username', async function () {
         try {
-            await SavedBook.getSavedBook('wrong');
+            await SavedBook.getSavedBook('11', 'wrong');
             fail();
         } catch (err) {
             expect(err instanceof NotFoundError).toBeTruthy();
@@ -274,10 +272,10 @@ describe(`get a saved book's info`, function () {
 
 describe(`delete a saved book`, function () {
     it('should delete a saved book', async function () {
-        const deletedBook = await SavedBook.deleteSavedBook(testSavedBookIds[0], 'user1')
+        const deletedBook = await SavedBook.deleteSavedBook('11', 'user1')
 
         expect(deletedBook).toEqual({
-            id: testSavedBookIds[0]
+            volume_id: '11'
         });
     });
 });
