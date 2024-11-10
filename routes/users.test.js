@@ -2,7 +2,6 @@
 
 const request = require('supertest');
 const app = require('../app');
-const db = require('../db');
 
 const User = require('../models/user');
 
@@ -12,7 +11,6 @@ const {
     commonAfterEach,
     commonAfterAll,
     testUserIds,
-    testSavedBookIds,
     user1Token,
     user2Token,
 } = require('./_testCommon');
@@ -138,7 +136,7 @@ describe('GET /users/:username', function () {
                 id: testUserIds[0],
                 username: 'user1',
                 email: 'user1@email.com',
-                saved_book_ids: [testSavedBookIds[0]]
+                volume_ids: ['11']
             }
         });
     });
