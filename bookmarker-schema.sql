@@ -10,7 +10,7 @@ CREATE TABLE users (
 CREATE TABLE saved_books (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
-    volume_id INTEGER UNIQUE NOT NULL,
+    volume_id TEXT NOT NULL,
     title TEXT NOT NULL,
     author TEXT,
     publisher TEXT,
@@ -22,19 +22,17 @@ CREATE TABLE saved_books (
 
 CREATE TABLE reviews (
     id SERIAL PRIMARY KEY,
-    saved_book_id INTEGER NOT NULL REFERENCES saved_books ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
+    volume_id TEXT NOT NULL,
     comment TEXT NOT NULL,
-    volume_id INTEGER UNIQUE NOT NULL,
     created_at DATE DEFAULT CURRENT_DATE
 );
 
 CREATE TABLE ratings (
     id SERIAL PRIMARY KEY,
-    saved_book_id INTEGER NOT NULL REFERENCES saved_books ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
-    rating INTEGER NOT NULL,
-    volume_id INTEGER UNIQUE NOT NULL
+    volume_id TEXT NOT NULL,
+    rating INTEGER NOT NULL
 )
 
 
