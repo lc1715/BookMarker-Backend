@@ -25,25 +25,37 @@ afterAll(() => db.end())
 
 describe(`get book details from google books api`, function () {
     it('makes a successful API call', async function () {
-        const bookDetails = {
-            volumeId: "vol1",
-            title: "title1",
-            authors: [
-                "author1"
-            ],
+        const mockData = {
+            id: 'd34zvrjk89',
+            volumeInfo: {
+                title: 'title1',
+                authors: ['author1'],
+                publisher: 'pub1',
+                categories: 'cat1',
+                description: 'des1',
+                imageLinks: {
+                    thumbnail: 'http://books.google.com/image'
+                }
+            }
+        }
+
+        const mockSimplifiedData = {
+            volumeId: 'd34zvrjk89',
+            title: 'title1',
+            author: ['author1'],
             publisher: 'pub1',
             category: 'cat1',
-            description: "des1",
-            image: "http://books.google.com/image"
-        };
+            description: 'des1',
+            image: 'http://books.google.com/image'
+        }
 
-        axios.get.mockResolvedValue({ data: bookDetails });
+        axios.get.mockResolvedValue({ data: mockData });
 
         const resp = await request(app).get(`/books/details/vol1`)
 
         expect(axios.get).toHaveBeenCalledWith(`${GOOGLE_BASE_URL}/volumes/vol1?key=${GOOGLE_API_KEY}`)
         expect(resp.status).toEqual(200);
-        expect(resp.body).toEqual(bookDetails);
+        expect(resp.body).toEqual(mockSimplifiedData);
     });
 
     it('returns an error if API call fails', async function () {
