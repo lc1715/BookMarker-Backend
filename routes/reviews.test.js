@@ -2,7 +2,6 @@
 
 const request = require('supertest');
 const app = require('../app');
-const db = require('../db');
 
 const Review = require('../models/review');
 
@@ -12,10 +11,8 @@ const {
     commonAfterEach,
     commonAfterAll,
     testUserIds,
-    testSavedBookIds,
     testReviewIds,
     user1Token,
-    user2Token,
     user3Token
 } = require('./_testCommon');
 
@@ -24,15 +21,14 @@ beforeEach(commonBeforeEach)
 afterEach(commonAfterEach)
 afterAll(commonAfterAll)
 
-/***********************POST /reviews/savedbook/[savedBookId]/user/[username] */
+/***********************POST /reviews/[volumeId]/user/[username] */
 
-describe('POST /reviews/savedbook/[savedBookId]/user/[username]', function () {
+describe('POST /reviews/[volumeId]/user/[username]', function () {
     it('should add a book review', async function () {
         const res = await request(app)
-            .post(`/reviews/savedbook/${testSavedBookIds[2]}/user/user3`)
+            .post(`/reviews/33/user/user3`)
             .send({
-                comment: 'test comment',
-                volume_id: 33
+                comment: 'test comment'
             })
             .set('authorization', `Bearer ${user3Token}`)
 
@@ -42,43 +38,29 @@ describe('POST /reviews/savedbook/[savedBookId]/user/[username]', function () {
             {
                 id: expect.any(Number),
                 comment: 'test comment',
-                saved_book_id: testSavedBookIds[2],
                 user_id: testUserIds[2],
-                volume_id: 33,
+                volume_id: '33',
                 created_at: expect.any(String)
             }
-        })
+        });
     });
 
     it('returns bad request error if invalid data', async function () {
         const res = await request(app)
-            .post(`/reviews/savedbook/${testSavedBookIds[2]}/user/user3`)
+            .post(`/reviews/33/user/user3`)
             .send({
-                volume_id: 33
+                comment: 2345
             })
             .set('authorization', `Bearer ${user3Token}`)
 
         expect(res.statusCode).toEqual(400);
     });
 
-    it('returns not found error if book not already saved by user', async function () {
+    it('returns forbidden error if user tries to add more than 1 review', async function () {
         const res = await request(app)
-            .post(`/reviews/savedbook/999/user/user3`)
+            .post(`/reviews/11/user/user1`)
             .send({
-                comment: 'test comment',
-                volume_id: 33
-            })
-            .set('authorization', `Bearer ${user3Token}`)
-
-        expect(res.statusCode).toEqual(404);
-    });
-
-    it('returns not forbidden error if user tries to add more than 1 review', async function () {
-        const res = await request(app)
-            .post(`/reviews/savedbook/${testSavedBookIds[0]}/user/user1`)
-            .send({
-                comment: 'another comment',
-                volume_id: 11
+                comment: 'another comment'
             })
             .set('authorization', `Bearer ${user1Token}`)
 
@@ -87,10 +69,9 @@ describe('POST /reviews/savedbook/[savedBookId]/user/[username]', function () {
 
     it('returns not found error with non-existent user', async function () {
         const res = await request(app)
-            .post(`/reviews/savedbook/${testSavedBookIds[2]}/user/wrong`)
+            .post(`/reviews/33/user/wrong`)
             .send({
-                comment: 'test comment',
-                volume_id: 33
+                comment: 'test comment'
             })
             .set('authorization', `Bearer ${user3Token}`)
 
@@ -114,9 +95,8 @@ describe('PATCH /reviews/[reviewId]/user/[username]', function () {
             {
                 id: testReviewIds[0],
                 comment: 'update my comment',
-                saved_book_id: testSavedBookIds[0],
                 user_id: testUserIds[0],
-                volume_id: 11,
+                volume_id: '11',
                 created_at: expect.any(String),
             }
         })
@@ -124,7 +104,7 @@ describe('PATCH /reviews/[reviewId]/user/[username]', function () {
 
     it('returns not found error with incorrect review id', async function () {
         const res = await request(app)
-            .patch(`/reviews/999/user/user1`)
+            .patch(`/reviews/${999}/user/user1`)
             .send({
                 comment: 'test comment',
             })
@@ -157,10 +137,9 @@ describe('GET /reviews/[volumeId]', function () {
                 {
                     id: testReviewIds[0],
                     comment: 'comment1',
-                    saved_book_id: testSavedBookIds[0],
                     user_id: testUserIds[0],
                     username: 'user1',
-                    volume_id: 11,
+                    volume_id: '11',
                     created_at: expect.any(String),
                 }
             ]
@@ -171,7 +150,7 @@ describe('GET /reviews/[volumeId]', function () {
 /***********************DELETE /reviews/[id]/user/[username]*/
 
 describe('DELETE /reviews/[id]/user/[username]', function () {
-    it('should delete a book', async function () {
+    it('should delete a review', async function () {
         const res = await request(app)
             .delete(`/reviews/${testReviewIds[0]}/user/user1`)
             .set('authorization', `Bearer ${user1Token}`)
