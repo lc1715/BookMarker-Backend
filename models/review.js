@@ -11,16 +11,16 @@ const {
 
 class Review {
 
-    /** Add a book review given savedBookId, username, and data 
+    /** Add a book review given volumeId, username, and data 
     * 
-    * data: {comment, volume_id } 
+    * data: {comment} 
     *
-    * Returns: {id, comment, saved_book_id, user_id, volume_id, created_at}
+    * Returns: {id, comment, user_id, volume_id, created_at}
     * 
     * id: book review's id
     **/
 
-    static async addReview(savedBookId, username, data) {
+    static async addReview(volumeId, username, data) {
         //check if user exists
         const preCheckUser = await db.query(
             `SELECT id, username
@@ -32,25 +32,13 @@ class Review {
 
         if (!user) throw new NotFoundError(`No User: ${username} Not Found`)
 
-        //check if saved book id and volume id are both in saved_books table
-        const preCheckBook = await db.query(
-            `SELECT id, volume_id
-              FROM saved_books
-              WHERE id = $1
-              AND volume_id = $2`, [savedBookId, data.volume_id]
-        );
-
-        const book = preCheckBook.rows[0]
-
-        if (!book) throw new NotFoundError(`Cannot find Book Id: ${savedBookId} or Volume Id: ${data.volume_id} in saved_books table`)
-
         //check if review already written
         const preCheckReviewInDB = await db.query(
             `SELECT id, comment
                 FROM reviews
                 WHERE user_id = $1
-                AND saved_book_id = $2`,
-            [user.id, savedBookId]
+                AND volume_id = $2`,
+            [user.id, volumeId]
         )
 
         const reviewInDb = preCheckReviewInDB.rows
@@ -58,18 +46,17 @@ class Review {
         if (reviewInDb.length > 0) throw new ForbiddenError(`Only one review per book is allowed`)
 
         //Check if review is empty
-        if (data.comment === '') throw new BadRequestError(`Empty review. Please write a review`);
+        if (data.comment === '') throw new BadRequestError(`Review needs to be a minimum of 1 character`);
 
         try {
             const result = await db.query(
                 `INSERT INTO reviews
-                    (saved_book_id,
-                     user_id,
+                    (user_id,
                      comment,
                      volume_id)
-                VALUES ($1, $2, $3, $4)
-                RETURNING id, comment, saved_book_id, user_id, volume_id, created_at`,
-                [savedBookId, user.id, data.comment, data.volume_id])
+                VALUES ($1, $2, $3)
+                RETURNING id, comment, user_id, volume_id, created_at`,
+                [user.id, data.comment, volumeId])
 
             const review = result.rows[0];
 
@@ -83,7 +70,7 @@ class Review {
      * 
      * data: { comment }
      * 
-     * Returns: {id, comment, saved_book_id, user_id, volume_id, created_at}
+     * Returns: {id, comment, user_id, volume_id, created_at}
      * 
      * id: book review's id
      */
@@ -101,7 +88,7 @@ class Review {
         if (!user) throw new NotFoundError(`No User: ${username} Not Found`)
 
         //Check if review is empty
-        if (data.comment === '') throw new BadRequestError(`Empty review. Please write a review`);
+        if (data.comment === '') throw new BadRequestError(`Review needs to be a minimum of 1 character`);
 
         //update review
         const result = await db.query(
@@ -109,7 +96,7 @@ class Review {
                 SET comment = $1
                 WHERE user_id = $2
                 AND id = $3
-                RETURNING id, comment, created_at, user_id, saved_book_id, volume_id`,
+                RETURNING id, comment, created_at, user_id, volume_id`,
             [data.comment, user.id, reviewId])
 
         const updatedReview = result.rows[0];
@@ -121,14 +108,14 @@ class Review {
 
     /**Get all reviews for a book given volumeId 
      * 
-     * Returns: [{id, comment, created_at, volume_id, saved_book_id, user_id, username}, ...]
+     * Returns: [{id, comment, created_at, volume_id, user_id, username}, ...]
      * 
      * id: review id
      */
 
     static async getAllBookReviews(volumeId) {
         const result = await db.query(
-            `SELECT r.id, r.comment, r.created_at, r.volume_id, r.saved_book_id, r.user_id, u.username
+            `SELECT r.id, r.comment, r.created_at, r.volume_id, r.user_id, u.username
                 FROM reviews AS r
                 JOIN users AS u
                 ON r.user_id = u.id

@@ -96,8 +96,8 @@ class User {
      * 
      * Given a username, return user's data.
      * 
-     * Returns { id, username, email, saved_book_ids}
-     * where saved_book_ids is [id, ...] 
+     * Returns { id, username, email, volume_ids}
+     * where volume_ids is [id, ...] 
      *
      * Throws NotFoundError if user not found.
      */
@@ -117,12 +117,12 @@ class User {
         if (!user) throw new NotFoundError(`No user: ${username}`)
 
         const userSaved_BooksResp = await db.query(
-            `SELECT id
+            `SELECT volume_id
                 FROM saved_books 
                 WHERE user_id = $1`, [user.id]
         );
 
-        user.saved_book_ids = userSaved_BooksResp.rows.map(bookObj => bookObj.id)
+        user.volume_ids = userSaved_BooksResp.rows.map(bookObj => bookObj.volume_id)
 
         return user;
     }
@@ -193,6 +193,5 @@ class User {
         return deletedUserUsername;
     }
 }
-
 
 module.exports = User;
