@@ -112,7 +112,7 @@ router.get('/bestsellers/details/:isbn', async function (req, res, next) {
  */
 function simplifyBookList(apiBooks) {
     return apiBooks.map(book => {
-        if (book.volumeInfo) {
+        if (book.volumeInfo && book.id) {
             return {
                 volumeId: book.id,
                 title: book.volumeInfo.title || undefined,
@@ -120,16 +120,21 @@ function simplifyBookList(apiBooks) {
                 description: book.volumeInfo.description || undefined,
                 image: book.volumeInfo.imageLinks?.thumbnail || undefined
             }
-        } else {
-            return {
-                isbn: book.isbns[0].isbn13 || undefined,
-                title: book.title || undefined,
-                author: book.author || undefined,
-                description: book.description || undefined,
-                image: book.book_image || undefined
+        } else if (Array.isArray(book.isbns)) {
+            const validIsbn13 = book.isbns.find(i => i.isbn13);
+            const validIsbn10 = book.isbns.find(i => i.isbn10);
+            const validIsbn = validIsbn13?.isbn13 || validIsbn10?.isbn10;
+            if (validIsbn) {
+                return {
+                    isbn: validIsbn,
+                    title: book.title || undefined,
+                    author: book.author || undefined,
+                    description: book.description || undefined,
+                    image: book.book_image || undefined
+                }
             }
         }
-    })
+    }).filter(book => book)
 };
 
 /**Simplify the book details from Google API and NYT API 
